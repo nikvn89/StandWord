@@ -2,6 +2,9 @@
 
 StandWord is a GenLayer Project interface for the deployed `PriorWordBind` Intelligent Contract. It lets an author publish an immutable position, lets other wallets register reliance, and asks GenLayer consensus whether a later statement narrows the position's original scope. A narrowing verdict permanently marks the position as `WALKED_BACK` and unlocks reliance withdrawal.
 
+- Live project: https://stand-word.vercel.app
+- GitHub repository: https://github.com/nikvn89/StandWord
+
 ## Verified deployment
 
 - Network: GenLayer StudioNet, chain ID `61999`
@@ -22,7 +25,28 @@ The exact deployed source is preserved at `contract/PriorWordBind.py`. The older
 6. Inspect the finalized follow-up verdict and reliance ledger.
 7. If the position becomes `WALKED_BACK`, the relying wallet may withdraw its reliance.
 
-The frontend only stages WebMCP inputs; it never submits a transaction without an explicit wallet confirmation.
+The frontend never submits a transaction without an explicit wallet confirmation.
+
+## Verified end-to-end run
+
+The complete lifecycle was verified on StudioNet with separate author and relier wallets.
+
+- Position ID: `d638454dc549b73e59171d2b23e85069dd4c2c1f5262997c2cfc44d57174d348`
+- `open_position`: `FINALIZED`, position loaded as `STANDING`
+- `register_reliance`: `FINALIZED`, reliance shown as active
+- `submit_followup`: `FINALIZED`, verdict changed the position to `WALKED_BACK`
+- `withdraw_reliance`: `FINALIZED / SUCCESS`, reliance shown as withdrawn
+
+### Evidence
+
+| Step | Screenshot |
+| --- | --- |
+| Position finalized | [Open position](docs/evidence/01-open-position-finalized.png) |
+| Reliance active | [Register reliance](docs/evidence/02-reliance-active.png) |
+| Walkback verdict | [Follow-up result](docs/evidence/03-followup-walked-back.png) |
+| Reliance withdrawn | [Withdrawal result](docs/evidence/04-reliance-withdrawn.png) |
+| Explorer confirmation | [Finalized transaction](docs/evidence/05-withdraw-explorer-finalized.png) |
+| Deployed frontend | [Live project](docs/evidence/06-live-project.png) |
 
 ## Run locally
 

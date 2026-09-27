@@ -99,23 +99,8 @@ type LoadedRecord = {
 type TxRecord = { label: string; status: string; hash: string };
 type ActionTab = "followup" | "reliance";
 
-type ModelContext = {
-  registerTool(
-    tool: {
-      name: string;
-      title: string;
-      description: string;
-      inputSchema: Record<string, unknown>;
-      annotations?: { readOnlyHint?: boolean; untrustedContentHint?: boolean };
-      execute(input: unknown): unknown | Promise<unknown>;
-    },
-    options?: { signal?: AbortSignal },
-  ): void | Promise<void>;
-};
-
 declare global {
   interface Window { ethereum?: EthereumProvider }
-  interface Document { modelContext?: ModelContext }
 }
 
 const compact = (value: string, start = 7, end = 5) => value ? `${value.slice(0, start)}…${value.slice(-end)}` : "—";
@@ -340,49 +325,6 @@ export default function Home() {
       if (!pendingAction) toast.error("Reliance was not withdrawn", { description: errorMessage(error) });
     }
   };
-
-  useEffect(() => {
-    const context = document.modelContext;
-    if (!context?.registerTool) return;
-    const lifecycle = new AbortController();
-    const register = (tool: Parameters<ModelContext["registerTool"]>[0]) => void Promise.resolve(context.registerTool(tool, { signal: lifecycle.signal })).catch(() => undefined);
-    register({
-      name: "inspect_standword_position",
-      title: "Inspect StandWord position",
-      description: "Load one finalized position with its follow-ups and registered reliances.",
-      inputSchema: { type: "object", properties: { positionId: { type: "string", pattern: "^(0x)?[0-9a-fA-F]{64}$" } }, required: ["positionId"], additionalProperties: false },
-      annotations: { readOnlyHint: true, untrustedContentHint: true },
-      async execute(input) { return loadPosition(String((input as { positionId?: unknown }).positionId ?? "")); },
-    });
-    register({
-      name: "stage_standword_position",
-      title: "Stage StandWord position",
-      description: "Fill the new-position form for user review without submitting a transaction.",
-      inputSchema: { type: "object", properties: { topic: { type: "string", minLength: 1 }, positionText: { type: "string", minLength: 1 } }, required: ["topic", "positionText"], additionalProperties: false },
-      annotations: { readOnlyHint: false, untrustedContentHint: true },
-      execute(input) {
-        const value = input as { topic?: unknown; positionText?: unknown };
-        if (typeof value.topic !== "string" || typeof value.positionText !== "string") throw new Error("Topic and positionText are required");
-        setTopic(value.topic); setPositionText(value.positionText);
-        return { staged: true, submitted: false };
-      },
-    });
-    register({
-      name: "stage_standword_followup",
-      title: "Stage StandWord follow-up",
-      description: "Fill a later statement for user review without submitting a transaction.",
-      inputSchema: { type: "object", properties: { positionId: { type: "string" }, followupText: { type: "string", minLength: 1 } }, required: ["positionId", "followupText"], additionalProperties: false },
-      annotations: { readOnlyHint: false, untrustedContentHint: true },
-      execute(input) {
-        const value = input as { positionId?: unknown; followupText?: unknown };
-        setPositionId(cleanPositionId(String(value.positionId ?? "")));
-        if (typeof value.followupText !== "string" || !value.followupText.trim()) throw new Error("followupText is required");
-        setFollowupText(value.followupText); setActiveTab("followup");
-        return { staged: true, submitted: false };
-      },
-    });
-    return () => lifecycle.abort();
-  }, [loadPosition]);
 
   const positionIsOwned = Boolean(record && account && sameAddress(record.position.creator, account));
   const canWithdraw = Boolean(record?.ownReliance?.active && record.position.state === "WALKED_BACK");

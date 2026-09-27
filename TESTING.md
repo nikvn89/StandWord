@@ -18,14 +18,26 @@ The critical project check verifies:
 - all four write methods and required ledger reads are wired;
 - the old Intelligent Contract address is absent from the runtime frontend.
 
-## Important live checks
+## Verified live run
 
-Use two funded StudioNet wallets. Do not reuse a topic with the same author because the position ID is author-and-topic scoped.
+The complete flow was executed with separate author and relier wallets on StudioNet.
 
-1. **Author:** connect, open a new position, approve the wallet request, wait for `FINALIZED`, and copy the predicted position ID.
-2. **Reader:** paste the position ID and confirm the exact topic, text, author and `STANDING` state load from finalized state.
-3. **Relier:** switch wallet, load the same ID, register reliance, and confirm the wallet appears as `ACTIVE`.
-4. **Author:** switch back, submit one later statement, wait for the consensus verdict, and confirm it appears in follow-up history.
-5. **Walkback path:** only if the verdict is `NARROWS_PRIOR`, confirm the state becomes `WALKED_BACK`; switch to the relying wallet and verify withdrawal becomes available.
+- Position ID: `d638454dc549b73e59171d2b23e85069dd4c2c1f5262997c2cfc44d57174d348`
+- Topic: `Release audit coverage — 2026-09-27 test 01`
+- Original position: `We will publish the audit report for every release.`
+- Reliance label: `Release compliance reviewer`
+- Narrowing follow-up: `We will publish a public audit report only for major software releases.`
 
-Keep the transaction hashes and screenshots from these flows as submission evidence. Never claim a live step passed unless its transaction reached `FINALIZED` and the finalized read reflected the change.
+| Step | Final state | Evidence |
+| --- | --- | --- |
+| Open position | `FINALIZED`, `STANDING` | `docs/evidence/01-open-position-finalized.png` |
+| Register reliance | `FINALIZED`, active | `docs/evidence/02-reliance-active.png` |
+| Submit follow-up | `FINALIZED`, `WALKED_BACK` | `docs/evidence/03-followup-walked-back.png` |
+| Withdraw reliance | `FINALIZED`, withdrawn | `docs/evidence/04-reliance-withdrawn.png` |
+| Explorer verification | `SUCCESS`, `Accepted`, `Finalized` | `docs/evidence/05-withdraw-explorer-finalized.png` |
+
+The finalized reads reflected each write. The deployed frontend is recorded in `docs/evidence/06-live-project.png`.
+
+## Reproduction notes
+
+Use two funded StudioNet wallets. A topic is unique per author, so change the topic before opening another position with the same wallet. Register reliance before submitting a narrowing follow-up; new reliance cannot be registered after the position becomes `WALKED_BACK`.
